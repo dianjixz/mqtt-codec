@@ -69,6 +69,7 @@ typedef enum mqtt_packet_type_t {
 #define MQTT_ERR_NOT_SUPPORTED 5
 #define MQTT_ERR_NOT_FOUND 6
 #define MQTT_ERR_MALFORMED 7
+#define MQTT_ERR_BUFF_SIZE 8
 
 struct pos_buf {
     uint8_t *curpos;
@@ -79,6 +80,7 @@ struct pos_buf {
 typedef struct mqtt_buf_t {
     uint32_t length;
     uint8_t *buf;
+    uint8_t is_malloced;
 } mqtt_buf;
 
 /* CONNECT flags */
@@ -184,16 +186,19 @@ typedef struct {
 typedef struct {
     mqtt_topic_qos *topic_arr; /* array of mqtt_topic_qos instances
                                   continuous in memory */
+    bool is_malloced;
     uint32_t topic_count;      /* not included in the message itself */
 } mqtt_subscribe_payload;
 
 typedef struct {
     uint8_t *ret_code_arr;   /* array of return codes continuous in memory */
+    bool is_malloced;
     uint32_t ret_code_count; /* not included in the message itself */
 } mqtt_suback_payload;
 
 typedef struct {
     mqtt_buf *topic_arr;   /* array of topic_arr continuous in memory */
+    bool is_malloced;
     uint32_t  topic_count; /* not included in the message itself */
 } mqtt_unsubscribe_payload;
 
@@ -248,6 +253,7 @@ typedef struct {
     bool _unused : 1;
 
     mqtt_buf entire_raw_msg; /* raw representation of whole packet */
+    bool is_malloced;
 } mqtt_msg;
 
 extern int byte_number_for_variable_length(uint32_t variable);

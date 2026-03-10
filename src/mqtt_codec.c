@@ -179,20 +179,22 @@ mqtt_buf mqtt_buf_dup(const mqtt_buf *src)
 
     dest.length = src->length;
     dest.buf    = malloc(dest.length);
+    dest.is_malloced = 1;
     memcpy(dest.buf, src->buf, dest.length);
     return dest;
 }
 
 void mqtt_buf_free(mqtt_buf *buf)
 {
-    free(buf->buf);
+    if(buf->is_malloced)
+        free(buf->buf);
 }
 
 static mqtt_msg *mqtt_msg_create_empty(void)
 {
     mqtt_msg *msg = (mqtt_msg *) malloc(sizeof(mqtt_msg));
     memset((char *) msg, 0, sizeof(mqtt_msg));
-
+    msg->is_malloced = 1;
     return msg;
 }
 
@@ -221,12 +223,14 @@ int mqtt_msg_destroy(mqtt_msg *self)
         /* If we are builder or a is_decoded that have an attached raw data,
          * we should destroy raw data too. */
         if ((!self->is_decoded) || (self->is_decoded && self->attached_raw)) {
-            free(self->entire_raw_msg.buf);
+            if(self->entire_raw_msg.is_malloced)
+                free(self->entire_raw_msg.buf);
         }
         self->entire_raw_msg.buf    = NULL;
         self->entire_raw_msg.length = 0;
     }
-    free(self);
+    if(self->is_malloced)
+        free(self);
 
     return 0;
 }
@@ -374,8 +378,15 @@ int encode_connect_msg(mqtt_msg *msg)
 
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -476,8 +487,16 @@ int encode_connack_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -524,8 +543,16 @@ int encode_subscribe_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -570,8 +597,16 @@ int encode_suback_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -613,8 +648,16 @@ int encode_publish_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -662,8 +705,15 @@ int encode_puback_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -694,8 +744,15 @@ int encode_pubrec_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -726,8 +783,15 @@ int encode_pubrel_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -760,8 +824,15 @@ int encode_pubcomp_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -803,8 +874,15 @@ int encode_unsubscribe_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -845,8 +923,15 @@ int encode_unsuback_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -876,8 +961,15 @@ int encode_pingreq_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -904,8 +996,15 @@ int encode_pingresp_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -933,8 +1032,15 @@ int encode_disconnect_msg(mqtt_msg *msg)
         byte_number_for_variable_length(msg->fixed_header.remaining_length) + 1;
     uint32_t totallength = poslength + hdrlen;
 
+    if(msg->entire_raw_msg.length < totallength){
+        return MQTT_ERR_BUFF_SIZE;
+    }
     msg->entire_raw_msg.length = totallength;
-    msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+    if(msg->entire_raw_msg.buf == NULL){
+        msg->entire_raw_msg.buf    = (uint8_t *) malloc(totallength);
+        msg->entire_raw_msg.is_malloced = 1;
+    }
+
     memset(msg->entire_raw_msg.buf, 0, msg->entire_raw_msg.length);
 
     struct pos_buf buf;
@@ -1091,6 +1197,7 @@ mqtt_msg *decode_raw_packet_connect_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1165,9 +1272,11 @@ mqtt_msg *decode_raw_packet_connect_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1185,6 +1294,7 @@ mqtt_msg *decode_raw_packet_connack_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1218,9 +1328,11 @@ mqtt_msg *decode_raw_packet_connack_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1243,6 +1355,7 @@ mqtt_msg *decode_raw_packet_subscribe_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1275,8 +1388,11 @@ mqtt_msg *decode_raw_packet_subscribe_msg(uint8_t *packet, uint32_t length,
         topic_count++;
     }
     /* Allocate topic array */
-    spld->topic_arr =
-        (mqtt_topic_qos *) malloc(topic_count * sizeof(mqtt_topic_qos));
+    if(spld->topic_arr == NULL){
+        spld->topic_arr =
+            (mqtt_topic_qos *) malloc(topic_count * sizeof(mqtt_topic_qos));
+        spld->is_malloced = 1;
+    }
     /* Set back current position */
     buf.curpos = saved_current_pos;
     while (buf.curpos < buf.endpos) {
@@ -1298,9 +1414,11 @@ mqtt_msg *decode_raw_packet_subscribe_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1319,6 +1437,7 @@ mqtt_msg *decode_raw_packet_suback_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1337,8 +1456,11 @@ mqtt_msg *decode_raw_packet_suback_msg(uint8_t *packet, uint32_t length,
     /* Suback Return Codes */
     msg->payload.suback.ret_code_count = buf.endpos - buf.curpos;
 
+    if(msg->payload.suback.ret_code_arr == NULL){
     msg->payload.suback.ret_code_arr = (uint8_t *) malloc(
-        msg->payload.suback.ret_code_count * sizeof(uint8_t));
+            msg->payload.suback.ret_code_count * sizeof(uint8_t));
+        msg->payload.suback.is_malloced = 1;
+    }
     ptr = msg->payload.suback.ret_code_arr;
     for (uint32_t i = 0; i < msg->payload.suback.ret_code_count; i++) {
         result = read_byte(&buf, ptr);
@@ -1353,9 +1475,11 @@ mqtt_msg *decode_raw_packet_suback_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1375,6 +1499,7 @@ mqtt_msg *decode_raw_packet_publish_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1415,9 +1540,11 @@ mqtt_msg *decode_raw_packet_publish_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1435,6 +1562,7 @@ mqtt_msg *decode_raw_packet_puback_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1452,9 +1580,11 @@ mqtt_msg *decode_raw_packet_puback_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1472,6 +1602,7 @@ mqtt_msg *decode_raw_packet_pubrec_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1489,9 +1620,11 @@ mqtt_msg *decode_raw_packet_pubrec_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1509,6 +1642,7 @@ mqtt_msg *decode_raw_packet_pubrel_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1526,9 +1660,11 @@ mqtt_msg *decode_raw_packet_pubrel_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1546,6 +1682,7 @@ mqtt_msg *decode_raw_packet_pubcomp_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1563,9 +1700,11 @@ mqtt_msg *decode_raw_packet_pubcomp_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1589,6 +1728,7 @@ mqtt_msg *decode_raw_packet_unsubscribe_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1621,7 +1761,10 @@ mqtt_msg *decode_raw_packet_unsubscribe_msg(uint8_t *packet, uint32_t length,
     }
 
     /* Allocate topic array */
-    uspld->topic_arr = (mqtt_buf *) malloc(topic_count * sizeof(mqtt_buf));
+    if(uspld->topic_arr == NULL) {
+        uspld->topic_arr = (mqtt_buf *) malloc(topic_count * sizeof(mqtt_buf));
+        uspld->is_malloced = 1;
+    }
 
     /* Set back current position */
     buf.curpos = saved_current_pos;
@@ -1638,9 +1781,11 @@ mqtt_msg *decode_raw_packet_unsubscribe_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1659,6 +1804,7 @@ mqtt_msg *decode_raw_packet_unsuback_msg(uint8_t *packet, uint32_t length,
     msg->used_bytes                    = prebytes - 1;
     msg->is_decoded                    = 1;
     msg->attached_raw                  = attached_raw;
+    msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
     msg->entire_raw_msg.buf            = packet;
     msg->entire_raw_msg.length         = length;
 
@@ -1678,9 +1824,11 @@ mqtt_msg *decode_raw_packet_unsuback_msg(uint8_t *packet, uint32_t length,
 
 ERROR:
     if (msg->attached_raw) {
-        free(msg->entire_raw_msg.buf);
+        if(msg->entire_raw_msg.is_malloced)
+            free(msg->entire_raw_msg.buf);
     }
-    free(msg);
+    if(msg->is_malloced)
+        free(msg);
     return NULL;
 }
 
@@ -1768,6 +1916,7 @@ mqtt_msg *mqtt_msg_decode_raw_packet_det(uint8_t *packet, uint32_t length,
         msg->used_bytes                      = prebytes - 1;
         msg->is_decoded                      = 1;
         msg->attached_raw                    = attached_raw;
+        msg->entire_raw_msg.is_malloced = attached_raw ? 1 : 0;
         msg->entire_raw_msg.buf              = packet;
         msg->entire_raw_msg.length           = length;
     } break;
